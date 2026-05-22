@@ -2,6 +2,7 @@ build/
 install/
 log/
 pipeline_debug/
+pipeline_debug*/
 src/turtle_draw_dog/pipeline_debug/
 __pycache__/
 *.pyc

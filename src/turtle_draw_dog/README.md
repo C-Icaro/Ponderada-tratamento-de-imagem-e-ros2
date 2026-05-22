@@ -20,16 +20,13 @@ No Windows PowerShell:
 wsl -d Ubuntu-24.04
 ```
 
-Dentro do Ubuntu, entre na raiz do repositorio e depois no workspace ROS:
+Dentro do Ubuntu, entre na raiz do repositorio:
 
 ```bash
-cd ros2_ws
 source /opt/ros/jazzy/setup.bash
 colcon build --symlink-install --packages-select turtle_draw_dog
 source install/setup.bash
 ```
-
-Se o seu repositorio ja for o proprio workspace `ros2_ws`, pule o `cd ros2_ws`.
 
 Se voce adicionou ou trocou a imagem depois de ja ter buildado, rode o build novamente:
 
@@ -56,7 +53,6 @@ Saidas esperadas:
 Se o comando acima falhar com `Package 'turtle_draw_dog' not found` ou `No executable found`, o terminal ainda nao esta com o workspace carregado. Rode:
 
 ```bash
-cd ros2_ws
 source /opt/ros/jazzy/setup.bash
 source install/setup.bash
 ros2 pkg executables turtle_draw_dog

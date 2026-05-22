@@ -41,7 +41,7 @@ source install/setup.bash
 Este comando roda apenas o processamento da imagem e salva imagens intermediarias:
 
 ```bash
-ros2 run turtle_draw_dog preview_pipeline --output pipeline_debug
+ros2 run turtle_draw_dog preview_pipeline --output pipeline_debug --max-points 1800 --target-width 230
 ```
 
 Saidas esperadas:
@@ -78,16 +78,16 @@ ls install/turtle_draw_dog/share/turtle_draw_dog/assets/dog.png
 ros2 launch turtle_draw_dog turtle_draw.launch.py
 ```
 
-O launch desenha por `/turtle1/cmd_vel`, entao a tartaruga anda de verdade e o rastro aparece progressivamente. Entre segmentos desconectados ela reposiciona com a caneta desligada. Para uma demonstracao ainda mais rapida para gravar o video:
+O launch desenha por `/turtle1/cmd_vel`, entao a tartaruga anda de verdade e o rastro aparece progressivamente. Entre segmentos desconectados ela reposiciona com a caneta desligada. Para uma demonstracao com contornos mais definidos:
 
 ```bash
-ros2 launch turtle_draw_dog turtle_draw.launch.py max_points:=180 target_width:=130 stroke_speed:=4.5
+ros2 launch turtle_draw_dog turtle_draw.launch.py max_points:=1800 target_width:=230 stroke_speed:=4.0
 ```
 
-Parametros uteis:
+Para gravar um video mais rapido, reduza os pontos:
 
 ```bash
-ros2 launch turtle_draw_dog turtle_draw.launch.py target_width:=180 max_points:=450 stroke_speed:=4.0 min_segment_time:=0.018
+ros2 launch turtle_draw_dog turtle_draw.launch.py target_width:=160 max_points:=350 stroke_speed:=4.5 min_segment_time:=0.018
 ```
 
 ## Se a janela do TurtleSim nao abrir
@@ -103,7 +103,7 @@ Se ainda aparecer so a miniatura na barra de tarefas, use `Alt+Tab` e selecione 
 Para usar outra imagem:
 
 ```bash
-ros2 launch turtle_draw_dog turtle_draw.launch.py image_path:=/caminho/para/imagem.png
+ros2 launch turtle_draw_dog turtle_draw.launch.py image_path:=dog.png
 ```
 
 ## Estrutura

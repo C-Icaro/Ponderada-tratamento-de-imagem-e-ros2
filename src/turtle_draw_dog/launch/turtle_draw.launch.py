@@ -24,7 +24,7 @@ def generate_launch_description():
                 default_value=PathJoinSubstitution([FindPackageShare("turtle_draw_dog"), "assets", "dog.png"]),
             ),
             DeclareLaunchArgument("target_width", default_value="230"),
-            DeclareLaunchArgument("max_points", default_value="300"),
+            DeclareLaunchArgument("max_points", default_value="1800"),
             DeclareLaunchArgument("draw_delay", default_value="0.0"),
             DeclareLaunchArgument("move_tolerance", default_value="0.09"),
             DeclareLaunchArgument("max_linear_speed", default_value="3.2"),

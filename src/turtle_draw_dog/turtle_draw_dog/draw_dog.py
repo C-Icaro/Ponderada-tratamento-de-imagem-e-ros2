@@ -159,8 +159,8 @@ class TurtleDogDrawer(Node):
         self.teleport(previous[0], previous[1], theta)
         self.set_pen(off=False)
         self.drive_straight_for(duration, speed)
-        self.set_pen(off=True)
         self.teleport(current[0], current[1], theta)
+        self.set_pen(off=True)
 
     def draw_paths(self, paths: list) -> None:
         delay = float(self.get_parameter("draw_delay").value)

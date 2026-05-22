@@ -16,7 +16,7 @@ A deteccao de bordas usa operadores Sobel implementados por convolucao. O modulo
 
 ## Planejamento de caminho
 
-O mapa binario de bordas e convertido em componentes conectados. Cada componente e percorrido por uma estrategia de rastreamento local: a pipeline escolhe um ponto inicial, avanca por vizinhos ainda nao visitados e cria um novo segmento quando um ramo termina. Depois, os caminhos sao simplificados por distancia minima entre pontos e pelo algoritmo Ramer-Douglas-Peucker, tambem implementado no projeto. Essa simplificacao e importante porque o `turtlesim` nao precisa receber todos os pixels da borda.
+O mapa binario de bordas e convertido em componentes conectados. Cada componente e percorrido por uma estrategia de rastreamento local: a pipeline escolhe um ponto inicial, avanca por vizinhos ainda nao visitados e cria um novo segmento quando um ramo termina. Depois, os caminhos sao simplificados por distancia minima entre pontos e pelo algoritmo Ramer-Douglas-Peucker, tambem implementado no projeto. Para que os contornos aparecam como linhas continuas, pequenos vaos entre trechos do mesmo componente sao conectados e os segmentos longos sao densificados antes do envio ao `turtlesim`. Essa simplificacao e importante porque o `turtlesim` nao precisa receber todos os pixels da borda.
 
 Os pontos da imagem sao mapeados para o espaco do `turtlesim`, que vai aproximadamente de 0 a 11 nos eixos `x` e `y`. O mapeamento preserva a proporcao do desenho, centraliza os contornos na tela e inverte o eixo vertical, pois imagens crescem para baixo enquanto o plano cartesiano do `turtlesim` cresce para cima.
 

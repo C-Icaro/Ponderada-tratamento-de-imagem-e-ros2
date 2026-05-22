@@ -410,34 +410,120 @@ def rdp_simplify(points: np.ndarray, epsilon: float) -> np.ndarray:
     return points[keep]
 
 
-def limit_total_points(paths: list[np.ndarray], max_points: int) -> list[np.ndarray]:
-    selected: list[np.ndarray] = []
-    total = 0
-    for path in paths:
-        if total >= max_points:
-            break
-        remaining = max_points - total
-        current = path
-        if len(current) > remaining:
-            if remaining < 2:
+def connect_nearby_paths(paths: list[np.ndarray], max_gap: float = 3.0) -> list[np.ndarray]:
+    connected: list[np.ndarray] = []
+    unused = [path for path in paths if len(path) >= 2]
+
+    while unused:
+        current = unused.pop(0)
+        while unused:
+            best_index = -1
+            best_distance = max_gap
+            best_mode = "append"
+            best_reverse = False
+
+            for index, candidate in enumerate(unused):
+                options = (
+                    (current[-1], candidate[0], "append", False),
+                    (current[-1], candidate[-1], "append", True),
+                    (current[0], candidate[-1], "prepend", False),
+                    (current[0], candidate[0], "prepend", True),
+                )
+                for current_endpoint, candidate_endpoint, mode, reverse in options:
+                    distance = float(np.linalg.norm(current_endpoint - candidate_endpoint))
+                    if distance <= best_distance:
+                        best_index = index
+                        best_distance = distance
+                        best_mode = mode
+                        best_reverse = reverse
+
+            if best_index < 0:
                 break
-            indices = np.linspace(0, len(current) - 1, remaining).round().astype(np.int32)
-            current = current[np.unique(indices)]
-        if len(current) >= 2:
-            selected.append(current)
-            total += len(current)
-    return selected
+
+            candidate = unused.pop(best_index)
+            if best_reverse:
+                candidate = candidate[::-1]
+            if best_mode == "append":
+                current = np.vstack((current, candidate[1:] if best_distance < 0.1 else candidate))
+            else:
+                current = np.vstack((candidate[:-1] if best_distance < 0.1 else candidate, current))
+
+        connected.append(current)
+
+    return connected
+
+
+def densify_path(points: np.ndarray, max_step: float = 2.2) -> np.ndarray:
+    if len(points) <= 1:
+        return points
+
+    dense: list[np.ndarray] = [points[0]]
+    for start, end in zip(points[:-1], points[1:]):
+        distance = float(np.linalg.norm(end - start))
+        steps = max(1, int(np.ceil(distance / max_step)))
+        for step in range(1, steps + 1):
+            dense.append(start + (end - start) * (step / steps))
+
+    return np.array(dense, dtype=np.float32)
+
+
+def limit_total_points(paths: list[np.ndarray], max_points: int) -> list[np.ndarray]:
+    valid_paths = [path for path in paths if len(path) >= 2]
+    if not valid_paths or max_points < 2:
+        return []
+
+    total_points = sum(len(path) for path in valid_paths)
+    if total_points <= max_points:
+        return valid_paths
+
+    selected_count = min(len(valid_paths), max(1, max_points // 2))
+    selected_paths = valid_paths[:selected_count]
+    while selected_paths and sum(min(3, len(path)) for path in selected_paths) > max_points:
+        selected_paths.pop()
+
+    if not selected_paths:
+        return []
+
+    base_counts = np.array([min(3, len(path)) for path in selected_paths], dtype=np.int32)
+    remaining = max_points - int(base_counts.sum())
+    weights = np.sqrt(np.array([len(path) for path in selected_paths], dtype=np.float32))
+    raw_extra = remaining * weights / max(float(weights.sum()), 1.0)
+    extra_counts = np.floor(raw_extra).astype(np.int32)
+    counts = base_counts + extra_counts
+
+    spare = max_points - int(counts.sum())
+    if spare > 0:
+        fractions = raw_extra - extra_counts
+        for index in np.argsort(-fractions)[:spare]:
+            counts[index] += 1
+
+    limited: list[np.ndarray] = []
+    for path, count in zip(selected_paths, counts.tolist()):
+        count = max(2, min(int(count), len(path)))
+        if count >= len(path):
+            limited.append(path)
+            continue
+        indices = np.linspace(0, len(path) - 1, count).round().astype(np.int32)
+        indices = np.unique(indices)
+        if len(indices) < 2:
+            indices = np.array([0, len(path) - 1], dtype=np.int32)
+        limited.append(path[indices])
+
+    return limited
 
 
 def extract_paths(edge_map: np.ndarray, max_points: int = 1800) -> list[np.ndarray]:
     components = edge_components(edge_map, min_size=8)
     paths: list[np.ndarray] = []
     for component in components[:80]:
+        component_paths: list[np.ndarray] = []
         for path in trace_component(component):
-            path = simplify_by_distance(path, min_step=1.8)
-            path = rdp_simplify(path, epsilon=0.7)
+            path = simplify_by_distance(path, min_step=1.2)
+            path = rdp_simplify(path, epsilon=0.45)
+            path = densify_path(path, max_step=2.2)
             if len(path) >= 3:
-                paths.append(path)
+                component_paths.append(path)
+        paths.extend(connect_nearby_paths(component_paths, max_gap=3.0))
     paths.sort(reverse=True, key=len)
     return limit_total_points(paths, max_points=max_points)
 
@@ -514,8 +600,43 @@ def save_debug_images(result: VisionResult, output_dir: str | Path) -> None:
     preview = np.ones((*result.edge_map.shape, 3), dtype=np.float32)
     for path in result.paths_pixels:
         coords = np.round(path).astype(np.int32)
-        preview[coords[:, 0], coords[:, 1], :] = np.array([0.0, 0.0, 0.0], dtype=np.float32)
+        for start, end in zip(coords[:-1], coords[1:]):
+            draw_line_pixels(preview, start, end, color=np.array([0.0, 0.0, 0.0], dtype=np.float32))
     plt.imsave(output / "03_paths_preview.png", preview)
+
+
+def draw_line_pixels(canvas: np.ndarray, start: np.ndarray, end: np.ndarray, color: np.ndarray) -> None:
+    height, width = canvas.shape[:2]
+    y0, x0 = int(start[0]), int(start[1])
+    y1, x1 = int(end[0]), int(end[1])
+
+    dy = abs(y1 - y0)
+    dx = abs(x1 - x0)
+    step_y = 1 if y0 < y1 else -1
+    step_x = 1 if x0 < x1 else -1
+
+    def mark(y: int, x: int) -> None:
+        if 0 <= y < height and 0 <= x < width:
+            canvas[y, x, :] = color
+
+    if dx >= dy:
+        error = dx // 2
+        y = y0
+        for x in range(x0, x1 + step_x, step_x):
+            mark(y, x)
+            error -= dy
+            if error < 0:
+                y += step_y
+                error += dx
+    else:
+        error = dy // 2
+        x = x0
+        for y in range(y0, y1 + step_y, step_y):
+            mark(y, x)
+            error -= dx
+            if error < 0:
+                x += step_x
+                error += dy
 
 
 def paths_as_lists(paths: Iterable[np.ndarray]) -> list[list[tuple[float, float]]]:

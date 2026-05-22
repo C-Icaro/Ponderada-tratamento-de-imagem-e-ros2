@@ -18,7 +18,7 @@ Na raiz do repositorio:
 source /opt/ros/jazzy/setup.bash
 colcon build --symlink-install --packages-select turtle_draw_dog
 source install/setup.bash
-ros2 launch turtle_draw_dog turtle_draw.launch.py max_points:=180 target_width:=130 stroke_speed:=4.5
+ros2 launch turtle_draw_dog turtle_draw.launch.py max_points:=1800 target_width:=230 stroke_speed:=4.0
 ```
 
 ## Visualizar apenas a pipeline
@@ -27,7 +27,7 @@ ros2 launch turtle_draw_dog turtle_draw.launch.py max_points:=180 target_width:=
 source /opt/ros/jazzy/setup.bash
 colcon build --symlink-install --packages-select turtle_draw_dog
 source install/setup.bash
-ros2 run turtle_draw_dog preview_pipeline --output pipeline_debug
+ros2 run turtle_draw_dog preview_pipeline --output pipeline_debug --max-points 1800 --target-width 230
 ```
 
 As imagens de debug aparecem em `pipeline_debug`.

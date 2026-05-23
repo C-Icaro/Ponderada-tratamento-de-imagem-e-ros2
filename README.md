@@ -4,6 +4,11 @@ Ponderada de Robotica e Visao Computacional com ROS 2. O projeto le uma imagem d
 
 Este repositorio ja e a raiz do workspace ROS 2.
 
+## Video explicativo
+
+O video explicativo da ponderada esta disponivel no Google Drive:
+[pasta do video](https://drive.google.com/drive/folders/1yftGnDimFqZ7LHwQjKPfBi88MUNSUe0v?usp=drive_link).
+
 ## Execucao rapida
 
 Entre no WSL:
@@ -32,12 +37,32 @@ ros2 run turtle_draw_dog preview_pipeline --output pipeline_debug --max-points 1
 
 As imagens de debug aparecem em `pipeline_debug`.
 
+## Somente contorno externo
+
+Para desenhar apenas a silhueta do cachorro, sem olhos, focinho ou rugas internas:
+
+```bash
+ros2 launch turtle_draw_dog turtle_draw.launch.py external_only:=true max_points:=700 target_width:=230 stroke_speed:=4.0
+```
+
+Para conferir a imagem gerada antes de abrir o `turtlesim`:
+
+```bash
+ros2 run turtle_draw_dog preview_pipeline --output pipeline_debug_outline --external-only --max-points 700 --target-width 230
+```
+
 ## Script auxiliar para Windows
 
 Se a janela do `turtlesim` ficar presa no WSLg, rode pelo PowerShell a partir da raiz do repositorio:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\run_turtle_draw.ps1
+```
+
+Para rodar a versao apenas com contorno externo:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\run_turtle_draw.ps1 -ExternalOnly
 ```
 
 ## Estrutura
@@ -64,3 +89,4 @@ powershell -ExecutionPolicy Bypass -File .\run_turtle_draw.ps1
 - A pipeline de visao usa NumPy para o processamento.
 - `build/`, `install/`, `log/` e imagens de debug nao devem ser versionados.
 - Mais detalhes estao em `src/turtle_draw_dog/README.md`.
+- A documentacao tecnica da pipeline esta em `src/turtle_draw_dog/docs/RELATORIO.md`.

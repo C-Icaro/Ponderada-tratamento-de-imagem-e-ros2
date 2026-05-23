@@ -33,6 +33,7 @@ class TurtleDogDrawer(Node):
         self.declare_parameter("max_angular_speed", 8.0)
         self.declare_parameter("stroke_speed", 4.0)
         self.declare_parameter("min_segment_time", 0.018)
+        self.declare_parameter("external_only", False)
 
         self.teleport_client = self.create_client(TeleportAbsolute, "/turtle1/teleport_absolute")
         self.pen_client = self.create_client(SetPen, "/turtle1/set_pen")
@@ -194,6 +195,8 @@ class TurtleDogDrawer(Node):
         image_path = str(self.get_parameter("image_path").value)
         target_width = int(self.get_parameter("target_width").value)
         max_points = int(self.get_parameter("max_points").value)
+        external_only_value = self.get_parameter("external_only").value
+        external_only = str(external_only_value).lower() in ("1", "true", "yes", "on")
 
         self.wait_for_services()
         self.clear_canvas()
@@ -202,11 +205,13 @@ class TurtleDogDrawer(Node):
             image_path=image_path,
             target_width=target_width,
             max_points=max_points,
+            external_only=external_only,
         )
         self.get_logger().info(
             "Pipeline pronta: "
             f"crop={result.crop_box}, bordas={int(result.edge_map.sum())}, "
-            f"caminhos={len(result.paths_turtlesim)}, pontos={result.total_points}"
+            f"caminhos={len(result.paths_turtlesim)}, pontos={result.total_points}, "
+            f"external_only={external_only}"
         )
         self.draw_paths(result.paths_turtlesim)
 

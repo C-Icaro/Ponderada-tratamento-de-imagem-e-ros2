@@ -4,6 +4,11 @@ Pacote ROS 2 em Python que le uma imagem, extrai contornos com uma pipeline de v
 
 Imagem usada por padrao: `assets/dog.png`.
 
+## Video explicativo
+
+O video explicativo da ponderada esta disponivel no Google Drive:
+[pasta do video](https://drive.google.com/drive/folders/1yftGnDimFqZ7LHwQjKPfBi88MUNSUe0v?usp=drive_link).
+
 ## Requisitos
 
 - ROS 2 Jazzy
@@ -90,6 +95,18 @@ Para gravar um video mais rapido, reduza os pontos:
 ros2 launch turtle_draw_dog turtle_draw.launch.py target_width:=160 max_points:=350 stroke_speed:=4.5 min_segment_time:=0.018
 ```
 
+Para desenhar somente o contorno externo do cachorro:
+
+```bash
+ros2 launch turtle_draw_dog turtle_draw.launch.py external_only:=true max_points:=700 target_width:=230 stroke_speed:=4.0
+```
+
+Para gerar a previa desse modo:
+
+```bash
+ros2 run turtle_draw_dog preview_pipeline --output pipeline_debug_outline --external-only --max-points 700 --target-width 230
+```
+
 ## Se a janela do TurtleSim nao abrir
 
 As vezes o WSLg mostra o `TurtleSim` na barra de tarefas, mas a janela fica presa/minimizada em modo `[WARN:COPY MODE]`. Primeiro feche qualquer janela antiga do TurtleSim. Depois, no PowerShell do Windows, rode o script auxiliar que fica na raiz deste projeto:
@@ -132,5 +149,6 @@ turtle_draw_dog/
 - Componentes conectados de bordas.
 - Ordenacao e simplificacao dos caminhos.
 - Mapeamento dos pontos da imagem para o espaco do `turtlesim`.
+- Modo `external_only` para desenhar apenas a silhueta externa.
 
 O OpenCV e usado apenas para carregar a imagem, conforme permitido no enunciado.

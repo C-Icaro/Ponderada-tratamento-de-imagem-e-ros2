@@ -19,12 +19,14 @@ def main() -> None:
     parser.add_argument("--output", type=Path, default=Path("pipeline_debug"))
     parser.add_argument("--target-width", type=int, default=230)
     parser.add_argument("--max-points", type=int, default=1800)
+    parser.add_argument("--external-only", action="store_true")
     args = parser.parse_args()
 
     result = build_vision_paths(
         image_path=args.image,
         target_width=args.target_width,
         max_points=args.max_points,
+        external_only=args.external_only,
     )
     save_debug_images(result, args.output)
 
@@ -34,6 +36,7 @@ def main() -> None:
     print(f"Pixels de borda: {int(result.edge_map.sum())}")
     print(f"Caminhos: {len(result.paths_turtlesim)}")
     print(f"Pontos enviados ao turtlesim: {result.total_points}")
+    print(f"Apenas contorno externo: {args.external_only}")
     print(f"Debug salvo em: {args.output.resolve()}")
 
 

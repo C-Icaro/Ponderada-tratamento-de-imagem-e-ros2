@@ -16,6 +16,7 @@ def generate_launch_description():
     max_angular_speed = LaunchConfiguration("max_angular_speed")
     stroke_speed = LaunchConfiguration("stroke_speed")
     min_segment_time = LaunchConfiguration("min_segment_time")
+    external_only = LaunchConfiguration("external_only")
 
     return LaunchDescription(
         [
@@ -31,6 +32,7 @@ def generate_launch_description():
             DeclareLaunchArgument("max_angular_speed", default_value="8.0"),
             DeclareLaunchArgument("stroke_speed", default_value="4.0"),
             DeclareLaunchArgument("min_segment_time", default_value="0.018"),
+            DeclareLaunchArgument("external_only", default_value="false"),
             Node(
                 package="turtlesim",
                 executable="turtlesim_node",
@@ -60,6 +62,7 @@ def generate_launch_description():
                         "max_angular_speed": max_angular_speed,
                         "stroke_speed": stroke_speed,
                         "min_segment_time": min_segment_time,
+                        "external_only": external_only,
                     }
                 ],
             ),

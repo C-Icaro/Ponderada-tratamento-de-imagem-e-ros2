@@ -124,6 +124,38 @@ def binary_erode(mask: np.ndarray, iterations: int = 1) -> np.ndarray:
     return result
 
 
+def fill_internal_holes(mask: np.ndarray) -> np.ndarray:
+    mask = mask.astype(bool)
+    background = ~mask
+    outside = np.zeros(mask.shape, dtype=bool)
+    stack: list[tuple[int, int]] = []
+    height, width = mask.shape
+
+    for x in range(width):
+        if background[0, x]:
+            stack.append((0, x))
+        if background[height - 1, x]:
+            stack.append((height - 1, x))
+    for y in range(height):
+        if background[y, 0]:
+            stack.append((y, 0))
+        if background[y, width - 1]:
+            stack.append((y, width - 1))
+
+    while stack:
+        y, x = stack.pop()
+        if outside[y, x] or not background[y, x]:
+            continue
+        outside[y, x] = True
+        for dy, dx in NEIGHBORS_8:
+            ny, nx = y + dy, x + dx
+            if 0 <= ny < height and 0 <= nx < width and background[ny, nx] and not outside[ny, nx]:
+                stack.append((ny, nx))
+
+    holes = background & ~outside
+    return mask | holes
+
+
 def component_boxes(mask: np.ndarray) -> list[tuple[int, int, int, int, int]]:
     visited = np.zeros(mask.shape, dtype=bool)
     ys, xs = np.nonzero(mask)
@@ -314,6 +346,15 @@ def foreground_boundary_edges(image: np.ndarray) -> tuple[np.ndarray, np.ndarray
     subject = binary_erode(subject, iterations=1)
     boundary = subject & ~binary_erode(subject, iterations=1)
     return subject, boundary
+
+
+def external_boundary_edges(subject_mask: np.ndarray) -> np.ndarray:
+    solid_subject = binary_dilate(subject_mask, iterations=3)
+    solid_subject = fill_internal_holes(solid_subject)
+    solid_subject = binary_erode(solid_subject, iterations=2)
+    solid_subject = selected_component_mask(solid_subject, keep_ratio=0.5)
+    solid_subject = fill_internal_holes(solid_subject)
+    return solid_subject & ~binary_erode(solid_subject, iterations=1)
 
 
 def neighbor_degree(point: tuple[int, int], point_set: set[tuple[int, int]]) -> int:
@@ -512,18 +553,20 @@ def limit_total_points(paths: list[np.ndarray], max_points: int) -> list[np.ndar
     return limited
 
 
-def extract_paths(edge_map: np.ndarray, max_points: int = 1800) -> list[np.ndarray]:
+def extract_paths(edge_map: np.ndarray, max_points: int = 1800, external_only: bool = False) -> list[np.ndarray]:
     components = edge_components(edge_map, min_size=8)
+    if external_only:
+        components = components[:1]
     paths: list[np.ndarray] = []
     for component in components[:80]:
         component_paths: list[np.ndarray] = []
         for path in trace_component(component):
-            path = simplify_by_distance(path, min_step=1.2)
-            path = rdp_simplify(path, epsilon=0.45)
+            path = simplify_by_distance(path, min_step=2.0 if external_only else 1.2)
+            path = rdp_simplify(path, epsilon=1.0 if external_only else 0.45)
             path = densify_path(path, max_step=2.2)
             if len(path) >= 3:
                 component_paths.append(path)
-        paths.extend(connect_nearby_paths(component_paths, max_gap=3.0))
+        paths.extend(connect_nearby_paths(component_paths, max_gap=5.0 if external_only else 3.0))
     paths.sort(reverse=True, key=len)
     return limit_total_points(paths, max_points=max_points)
 
@@ -564,6 +607,7 @@ def build_vision_paths(
     image_path: str | Path,
     target_width: int = 230,
     max_points: int = 1800,
+    external_only: bool = False,
 ) -> VisionResult:
     rgb = load_image_rgb(image_path)
     gray = rgb_to_gray(rgb)
@@ -571,10 +615,13 @@ def build_vision_paths(
     cropped = gray[y0:y1, x0:x1]
     resized = resize_bilinear(cropped, target_width=target_width)
     normalized = normalize01(resized)
-    sobel_edges = detect_edges(normalized)
     subject_mask, subject_boundary = foreground_boundary_edges(normalized)
-    edge_map = (sobel_edges & binary_dilate(subject_mask, iterations=1)) | subject_boundary
-    paths_pixels = extract_paths(edge_map, max_points=max_points)
+    if external_only:
+        edge_map = external_boundary_edges(subject_mask)
+    else:
+        sobel_edges = detect_edges(normalized)
+        edge_map = (sobel_edges & binary_dilate(subject_mask, iterations=1)) | subject_boundary
+    paths_pixels = extract_paths(edge_map, max_points=max_points, external_only=external_only)
     paths_turtlesim = map_paths_to_turtlesim(paths_pixels, edge_map.shape)
     total_points = sum(len(path) for path in paths_turtlesim)
 
